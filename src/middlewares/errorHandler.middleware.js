@@ -1,53 +1,46 @@
 import { constant } from "../constants/response.constant.js";
 
 export const errorHandler = (err, req, res, next) => {
-  console.log("Error: ", err.message);
+  console.log("Error ❌: ", err.message);
 
-  const response = null;
-
-  // Only include stack in development
-  if (process.env.NODE_ENV === "development") {
-    response.stack = err.stack;
+  if (!err || typeof err !== "object") {
+    err = new Error("Unknown error");
   }
-  switch (res.statusCode) {
+
+  // Determine status code
+  const statusCode = err.statusCode || res.statusCode || 500;
+
+  // Initialize response properly (not null)
+  const response = {
+    success: false,
+    status:
+      err.status || (statusCode >= 400 && statusCode < 500 ? "failed" : "error"),
+    message: err.message || "Internal Server Error",
+  };
+
+  // Add stack only in development mode
+  // if (process.env.NODE_ENV === "development") {
+  //   response.stack = err.stack;
+  // }
+
+  switch (statusCode) {
     case constant?.FORBIDDEN:
-      response = {
-        success: false,
-        status: err.status || "error",
-        message: err.message || "Forbidden!",
-      };
+      response.message = err.message || "Forbidden!";
       break;
     case constant?.NOT_FOUND:
-      response = {
-        success: false,
-        status: err.status || "error",
-        message: err.message || "Not Found!",
-      };
+      response.message = err.message || "Not Found!";
       break;
     case constant?.UNAUTHORIZED:
-      response = {
-        success: false,
-        status: err.status || "error",
-        message: err.message || "Unauthorized!",
-      };
+      response.message = err.message || "Unauthorized!";
       break;
     case constant?.VALIDATION_ERROR:
-      response = {
-        success: false,
-        status: err.status || "error",
-        message: err.message || "Validation Failed!",
-      };
+      response.message = err.message || "Validation Failed!";
       break;
     case constant?.SERVER_ERROR:
-      response = {
-        success: false,
-        status: err.status || "error",
-        message: err.message || "Server Error!",
-      };
+      response.message = err.message || "Server Error!";
       break;
     default:
-      console.log("No Error, All Good!");
       break;
   }
-  res.status(err.statusCode || 500).json(response);
+  res.status(statusCode).json(response);
 };
